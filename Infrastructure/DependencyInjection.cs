@@ -21,6 +21,7 @@ namespace Infrastructure
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ICompanyService, CompanyService>();
+            services.AddScoped<IProductService, ProductService>();
 
 
             // Your other registrations...

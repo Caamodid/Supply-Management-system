@@ -12,6 +12,6 @@ namespace Domain.Entities
         public Guid BranchId { get; set; }       // FK → Branch
 
         public decimal Quantity { get; set; }
-        public decimal MinStockLevel { get; set; }
+        public decimal MinStockLevel { get; set; } = 10;
     }
 }

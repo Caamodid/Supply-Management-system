@@ -16,6 +16,7 @@ namespace Infrastructure.Persistence
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
+        public DbSet<CategoryType> CategoryTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

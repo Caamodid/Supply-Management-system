@@ -21,4 +21,9 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Products\Queries\" />
+    <Folder Include="Features\Products\Validators\" />
+  </ItemGroup>
+
 </Project>

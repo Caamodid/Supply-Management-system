@@ -14,6 +14,7 @@ namespace Domain.Entities
 
         public bool IsActive { get; set; } = true;
         public string? CreatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 

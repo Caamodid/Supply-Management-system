@@ -41,6 +41,19 @@ namespace Application.Common.Mapping
             CreateMap<UpdateCategoryRequest, Category>();
             CreateMap<Category, CategoryResponses>();
 
+
+
+            CreateMap<CreateCategoryTypeRequest, CategoryType>();
+            CreateMap<UpdateCategoryTypeRequest, CategoryType>();
+            CreateMap<CategoryType, CategoryTypeResponses>();
+
+
+            CreateMap<CreateProductRequest, Product>();
+            CreateMap<UpdateProductRequest, Product>();
+            CreateMap<Product, ProductResponses>();
+
+
+
             // (Optional) ReverseMap if needed for bidirectional mapping:
             // CreateMap<Employees, EmployeeResponse>().ReverseMap();
         }

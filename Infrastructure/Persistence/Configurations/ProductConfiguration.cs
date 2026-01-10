@@ -14,18 +14,20 @@ namespace Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Product> builder)
         {
-            //  FK: Product → Company
-            builder
-                .HasOne<Company>()
-                .WithMany()
-                .HasForeignKey(p => p.CompanyId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             //  FK: Product → Category
             builder
                 .HasOne<Category>()
                 .WithMany()
                 .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            //  FK: CategoryType → Category
+            builder
+                .HasOne<CategoryType>()
+                .WithMany()
+                .HasForeignKey(p => p.CategoryTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             //  FK: CreatedBy → AspNetUsers
