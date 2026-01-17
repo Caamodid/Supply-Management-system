@@ -1,5 +1,6 @@
 ﻿using Application;
 using Application.Common.Response;
+using Application.Common.Wrapper;
 using Application.Interfaces;
 using Infrastructure;
 using Infrastructure.Identity;
@@ -15,19 +16,26 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json;
 using WebApi.Permissions;
 
 namespace WebApi
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddWebApiServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddWebApiServices(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
-            // ✅ Database Configuration
+            // ============================
+            // Database
+            // ============================
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-            // ✅ Identity Configuration
+            // ============================
+            // Identity
+            // ============================
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
                 options.Password.RequiredLength = 6;
@@ -39,12 +47,17 @@ namespace WebApi
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 
-            // ✅ JWT Settings
+            // ============================
+            // JWT Settings
+            // ============================
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+
             var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
             var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
 
-            // ✅ Authentication + JWT
+            // ============================
+            // Authentication + JWT
+            // ============================
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -67,31 +80,77 @@ namespace WebApi
                     ClockSkew = TimeSpan.Zero
                 };
 
-                // ✅ Handle expired token → trigger refresh token on client
+                // ============================
+                // JWT EVENTS (Unified JSON errors)
+                // ============================
                 options.Events = new JwtBearerEvents
                 {
+                    // Token expired
                     OnAuthenticationFailed = context =>
                     {
-                        if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                        if (context.Exception is SecurityTokenExpiredException)
+                        {
                             context.Response.Headers.Add("Token-Expired", "true");
-
+                        }
                         return Task.CompletedTask;
+                    },
+
+                    // 401 - Not authenticated
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/json";
+
+                        var response = await ResponseWrapper<object>.FailureAsync(
+                            new List<string> { "Authentication required. Please login." },
+                            "Unauthorized",
+                            StatusCodes.Status401Unauthorized
+                        );
+
+                        var json = JsonSerializer.Serialize(response);
+                        await context.Response.WriteAsync(json);
+                    },
+
+                    // 403 - Forbidden (no role / no permission)
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.ContentType = "application/json";
+
+                        var response = await ResponseWrapper<object>.FailureAsync(
+                            new List<string> { "Access denied. You do not have permission to perform this action." },
+                            "Forbidden",
+                            StatusCodes.Status403Forbidden
+                        );
+
+                        var json = JsonSerializer.Serialize(response);
+                        await context.Response.WriteAsync(json);
                     }
                 };
             });
 
-            // ✅ Register only JWT service here (AuthService already from Infrastructure)
+            // ============================
+            // JWT Service
+            // ============================
             services.AddScoped<IJwtService, JwtService>();
 
-            // ✅ Infrastructure & Application Layers
+            // ============================
+            // Application & Infrastructure
+            // ============================
             services.AddInfrastructure(configuration);
             services.AddApplicationServices(configuration);
 
-            // ✅ Permissions authorization
+            // ============================
+            // Permissions Authorization
+            // ============================
             services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
             services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
-            // ✅ CORS
+            // ============================
+            // CORS
+            // ============================
             services.AddCors(options =>
             {
                 options.AddPolicy("KahiyeApp", policy =>
@@ -103,7 +162,9 @@ namespace WebApi
                 });
             });
 
-            // ✅ Controllers + Swagger
+            // ============================
+            // Controllers & Swagger
+            // ============================
             services.AddControllers();
             services.AddEndpointsApiExplorer();
 
@@ -137,7 +198,9 @@ namespace WebApi
             return services;
         }
 
-        // ✅ Identity Seeding
+        // ============================
+        // Identity Seeder
+        // ============================
         public static async Task UseIdentitySeederAsync(this IApplicationBuilder app)
         {
             using var scope = app.ApplicationServices.CreateScope();

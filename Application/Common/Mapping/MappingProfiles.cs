@@ -51,7 +51,23 @@ namespace Application.Common.Mapping
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
             CreateMap<Product, ProductResponses>();
+            CreateMap<Product, ProductResp>();
 
+
+            CreateMap<CreateCustomerRequest, Customer>();
+            CreateMap<UpdateCustomerRequest, Customer>();
+            CreateMap<Customer, CustomerResponses>();
+
+
+
+            CreateMap<CreateSalesRequest, Sale>();
+            CreateMap<UpdateSalesRequest, Sale>();
+            CreateMap<Sale, SalesResponses>();
+
+
+            CreateMap<CreateSaleItemRequest, SaleItem>();
+            CreateMap<UpdateSaleItemRequest, SaleItem>();
+            CreateMap<SaleItem, SaleItemResponses>();
 
 
             // (Optional) ReverseMap if needed for bidirectional mapping:

@@ -19,17 +19,23 @@ namespace Infrastructure.Repository
 
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
-
+        private readonly ICurrentUserService _currentUser;
         public UserService(
             UserManager<ApplicationUser> userManager,
-            RoleManager<ApplicationRole> roleManager)
+            RoleManager<ApplicationRole> roleManager, ICurrentUserService  currentUserService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _currentUser = currentUserService;
         }
 
         public async Task<ResponseWrapper<string>> CreateUserAsync(CreateUserRequest request)
         {
+
+            if (string.IsNullOrEmpty(_currentUser.UserId))
+                throw new UnauthorizedAccessException();
+
+
             var user = new ApplicationUser
             {
                 Email = request.Email,
@@ -39,41 +45,124 @@ namespace Infrastructure.Repository
                 PhoneNumber = request.Phone,
                 FirstName = request.FullName,
                 Gender = request.Gender,
-                ProfilePictureUrl = request.ProfilePictureUrl,
-                RefreshToken = "RefreshTokenExpiryTime"
 
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = _currentUser.UserId, // or UserId
 
-
+                ProfilePictureUrl = "Url",
+                RefreshToken = "RefreshToken"
             };
 
+            // 1️⃣ Create User
             var result = await _userManager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
-                return await ResponseWrapper<string>.FailureAsync(string.Join(", ", result.Errors.Select(e => e.Description)));
+            {
+                return await ResponseWrapper<string>.FailureAsync(
+                    string.Join(", ", result.Errors.Select(e => e.Description))
+                );
+            }
 
-            return await ResponseWrapper<string>.SuccessAsync($"User '{request.Email}' created successfully");
+            // 2️⃣ Assign Role
+            if (!string.IsNullOrWhiteSpace(request.Role))
+            {
+                if (!await _roleManager.RoleExistsAsync(request.Role))
+                {
+                    return await ResponseWrapper<string>.FailureAsync($"Role '{request.Role}' does not exist");
+                }
+
+                var roleResult = await _userManager.AddToRoleAsync(user, request.Role);
+
+                if (!roleResult.Succeeded)
+                {
+                    return await ResponseWrapper<string>.FailureAsync(
+                        string.Join(", ", roleResult.Errors.Select(e => e.Description))
+                    );
+                }
+            }
+
+            return await ResponseWrapper<string>.SuccessAsync(
+                $"User '{request.Email}' created successfully with role '{request.Role}'"
+            );
         }
+
 
         public async Task<ResponseWrapper<string>> UpdateUserAsync(UpdateUserRequest request)
         {
+            if (string.IsNullOrEmpty(_currentUser.UserId))
+                throw new UnauthorizedAccessException();
+
             var user = await _userManager.FindByIdAsync(request.UserId);
             if (user == null)
                 return await ResponseWrapper<string>.FailureAsync("User not found.");
 
+            /* ---------- Update Basic Info ---------- */
             user.Email = request.Email;
-            user.UserName = request.Email;
+            user.UserName = request.UserName;
             user.FirstName = request.FullName;
-            user.UserName =request.UserName;
-            user.PhoneNumber =request.Phone;
-            user.IsActive =request.Isactive;
-            user.ProfilePictureUrl = request.ProfilePictureUrl;
+            user.PhoneNumber = request.Phone;
             user.Gender = request.Gender;
 
-            var result = await _userManager.UpdateAsync(user);
+            user.UpdatedAt = DateTime.UtcNow;
+            user.CreatedBy = _currentUser.UserId; // or UserId
 
-            return result.Succeeded
-                ? await ResponseWrapper<string>.SuccessAsync("User updated successfully.")
-                : await ResponseWrapper<string>.FailureAsync("Failed to update user.");
+            /* ---------- Update User ---------- */
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return await ResponseWrapper<string>.FailureAsync(
+                    string.Join(", ", updateResult.Errors.Select(e => e.Description))
+                );
+            }
+
+            /* ---------- Update Role (Optional) ---------- */
+            if (!string.IsNullOrWhiteSpace(request.Role))
+            {
+                var currentRoles = await _userManager.GetRolesAsync(user);
+
+                if (currentRoles.Any())
+                {
+                    var removeRolesResult =
+                        await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+                    if (!removeRolesResult.Succeeded)
+                    {
+                        return await ResponseWrapper<string>.FailureAsync(
+                            "Failed to remove existing roles."
+                        );
+                    }
+                }
+
+                if (!await _roleManager.RoleExistsAsync(request.Role))
+                    return await ResponseWrapper<string>.FailureAsync("Role does not exist.");
+
+                var addRoleResult =
+                    await _userManager.AddToRoleAsync(user, request.Role);
+
+                if (!addRoleResult.Succeeded)
+                {
+                    return await ResponseWrapper<string>.FailureAsync(
+                        "Failed to assign new role."
+                    );
+                }
+            }
+
+            /* ---------- Update Password (Optional) ---------- */
+            if (!string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var passwordResult =
+                    await _userManager.ResetPasswordAsync(user, token, request.NewPassword);
+
+                if (!passwordResult.Succeeded)
+                {
+                    return await ResponseWrapper<string>.FailureAsync(
+                        string.Join(", ", passwordResult.Errors.Select(e => e.Description))
+                    );
+                }
+            }
+
+            return await ResponseWrapper<string>.SuccessAsync("User updated successfully.");
         }
 
         public async Task<ResponseWrapper<string>> DeleteUserAsync(string userId)

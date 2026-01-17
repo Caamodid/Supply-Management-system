@@ -121,12 +121,21 @@ namespace Infrastructure.Repository
             {
                 throw new KeyNotFoundException("Branch not found.");
             }
-            request.CreatedBy = _currentUser.UserId;
 
-            _context.Entry(existingBranch).CurrentValues.SetValues(request);
+            // ✅ Update ONLY allowed fields
+            existingBranch.BranchName = request.BranchName;
+            existingBranch.Address = request.Address;
+            existingBranch.Phone = request.Phone;
+            existingBranch.CompanyId = request.CompanyId;
+
+            // Audit fields
+            existingBranch.UpdatedBy = _currentUser.UserId;
+            existingBranch.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
             return existingBranch;
         }
+
 
 
 
@@ -196,9 +205,18 @@ namespace Infrastructure.Repository
             {
                 throw new KeyNotFoundException("Category not found.");
             }
-            request.CreatedBy = _currentUser.UserId;
 
-            _context.Entry(existingCategory).CurrentValues.SetValues(request);
+            // ✅ Update only allowed fields
+            existingCategory.Name = request.Name;
+            existingCategory.Description = request.Description;
+            existingCategory.IsActive = request.IsActive;
+            existingCategory.CompanyId = request.CompanyId;
+            existingCategory.BranchId = request.BranchId;
+
+            // ✅ Audit fields
+            existingCategory.UpdatedBy = _currentUser.UserId;
+            existingCategory.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
             return existingCategory;
         }
@@ -222,20 +240,22 @@ namespace Infrastructure.Repository
         public async Task<List<CategoryResponses>> GetAlCategoryAsync()
         {
             var data = await (
-                from c in _context.Companies
+                from ca in _context.Categories
+                join c in _context.Companies
+                    on ca.CompanyId equals c.Id
+                join b in _context.Branches
+                    on ca.BranchId equals b.Id
                 join u in _context.Users
-                    on c.CreatedBy equals u.Id
-                join Ca in _context.Categories
-                    on c.Id equals Ca.CompanyId
+                    on ca.CreatedBy equals u.Id
                 select new CategoryResponses
                 {
-                    Id = Ca.Id,
-                    Name = Ca.Name,
-                    Company=c.Name,
-                    Description = Ca.Description,
-                    CreatedAt = c.CreatedAt,
-                    CreatedBy = u.FirstName,
-
+                    Id = ca.Id,
+                    Name = ca.Name,
+                    Company = c.Name,
+                    BranchName = b.BranchName,          // ✅ correct
+                    Description = ca.Description,
+                    CreatedAt = ca.CreatedAt,
+                    CreatedBy = u.FirstName
                 }
             ).ToListAsync();
 

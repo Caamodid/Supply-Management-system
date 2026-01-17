@@ -9,11 +9,8 @@ namespace Application.Common.Response
     public class ProductResponses
     {
         public Guid Id { get; set; }
-        public string CategoryName { get; set; }        // FK → Company
-        public string CompanyName { get; set; }       // FK → Category
         public string? CategoryTypeName { get; set; }
-        public string? BranchName { get; set; }
-
+        public string? CategoryName { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
 
@@ -26,8 +23,6 @@ namespace Application.Common.Response
 
         public string? CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-
 
         public decimal Quantity { get; set; }
         public decimal MinStockLevel { get; set; }

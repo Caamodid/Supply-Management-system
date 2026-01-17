@@ -12,6 +12,8 @@ namespace Infrastructure.Identity
         public string Email { get; set; }
         public string RefreshToken { get; set; } = "MyTokenFirstIniatal";
         public DateTime RefreshTokenExpiryDate { get; set; }
+        public Guid? BranchId { get; set; } // NULL = global category
+
 
         public string Gender { get; set; } = string.Empty;
         public DateTime? DateOfBirth { get; set; }
@@ -27,7 +29,8 @@ namespace Infrastructure.Identity
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         public DateTime? LastLoginTime { get; set; }
+        public string? CreatedBy { get; set; }
 
-   
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Application.Common.Request;
 using Application.Features.Setup.Commands;
 using Application.Features.Setup.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -80,6 +81,7 @@ namespace WebApi.Controllers.Setup
         }
 
         // GET: api/client
+        [Authorize(Roles = "Administrator")]
         [HttpGet("branches")]
         public async Task<IActionResult> GetAllBranchAsync()
         {
@@ -88,7 +90,7 @@ namespace WebApi.Controllers.Setup
         }
 
         // DELETE: api/client/{id}
-        [HttpDelete("delete-branch{id}")]
+        [HttpDelete("delete-branch/{id}")]
         public async Task<IActionResult> DeleteBranchAsync(Guid id)
         {
             var response = await Mediator.Send(new DeleteBranchCommand { Id = id });
@@ -131,7 +133,7 @@ namespace WebApi.Controllers.Setup
         }
 
         // DELETE: api/client/{id}
-        [HttpDelete("delete-category{id}")]
+        [HttpDelete("delete-category/{id}")]
         public async Task<IActionResult> DeleteCategoryAsync(Guid id)
         {
             var response = await Mediator.Send(new DeleteCategoryCommand { Id = id });

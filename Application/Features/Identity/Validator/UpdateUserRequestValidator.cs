@@ -17,11 +17,11 @@ namespace Application.Features.Identity.Validator
                 .MaximumLength(50)
                 .Matches(@"^[a-zA-Z\s]+$").WithMessage("Full name must contain only letters.");
 
-            RuleFor(x => x.UserName)
-                .NotEmpty().WithMessage("Username is required.")
-                .MinimumLength(4).WithMessage("Username must be at least 4 characters.")
-                .MaximumLength(20)
-                .Matches(@"^[a-zA-Z0-9_]+$").WithMessage("Username must contain only letters, numbers, and underscore.");
+            //RuleFor(x => x.UserName)
+            //    .NotEmpty().WithMessage("Username is required.")
+            //    .MinimumLength(4).WithMessage("Username must be at least 4 characters.")
+            //    .MaximumLength(20)
+            //    .Matches(@"^[a-zA-Z0-9_]+$").WithMessage("Username must contain only letters, numbers, and underscore.");
 
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email is required.")

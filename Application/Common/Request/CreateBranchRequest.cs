@@ -8,8 +8,8 @@ namespace Application.Common.Request
 {
   public  class CreateBranchRequest
     {
-        public Guid CompanyId { get; set; }
-        public string BranchName { get; set; } = string.Empty;
+        public Guid? CompanyId { get; set; }
+        public string ?BranchName { get; set; } = string.Empty;
         public string? Address { get; set; }
         public string? Phone { get; set; }
     }

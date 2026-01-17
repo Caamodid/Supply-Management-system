@@ -1,0 +1,19 @@
+{
+  "/(admin)/(ui-elements)/avatars/page": "app/(admin)/(ui-elements)/avatars/page.js",
+  "/(admin)/(ui-elements)/buttons/page": "app/(admin)/(ui-elements)/buttons/page.js",
+  "/(admin)/Company/Branch/page": "app/(admin)/Company/Branch/page.js",
+  "/(admin)/Company/Category/page": "app/(admin)/Company/Category/page.js",
+  "/(admin)/Company/CategoryType/page": "app/(admin)/Company/CategoryType/page.js",
+  "/(admin)/Company/page": "app/(admin)/Company/page.js",
+  "/(admin)/Inventory/Convert/page": "app/(admin)/Inventory/Convert/page.js",
+  "/(admin)/Inventory/Transfer/page": "app/(admin)/Inventory/Transfer/page.js",
+  "/(admin)/Inventory/page": "app/(admin)/Inventory/page.js",
+  "/(admin)/Product/page": "app/(admin)/Product/page.js",
+  "/(admin)/Sales/Detail/[saleId]/page": "app/(admin)/Sales/Detail/[saleId]/page.js",
+  "/(admin)/Sales/List/page": "app/(admin)/Sales/List/page.js",
+  "/(admin)/Sales/page": "app/(admin)/Sales/page.js",
+  "/(admin)/page": "app/(admin)/page.js",
+  "/(admin)/users/page": "app/(admin)/users/page.js",
+  "/(full-width-pages)/(auth)/signin/page": "app/(full-width-pages)/(auth)/signin/page.js",
+  "/_not-found/page": "app/_not-found/page.js"
+}

@@ -11,9 +11,9 @@ namespace Application.Common.Request
         public string Gender { get; set; }
         public bool Isactive { get; set; } = true;
         public string FullName { get; set; }
-        public string Address { get; set; }
+        public string Address { get; set; } = "Somalia";
         public string Email { get; set; }
-        public string ProfilePictureUrl { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
 
 
     }
@@ -21,14 +21,16 @@ namespace Application.Common.Request
     // 🔹 Update User
     public class UpdateUserRequest
     {
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public string Email { get; set; }
         public string Phone { get; set; }
         public string UserName { get; set; }
         public bool Isactive { get; set; } = true;
         public string FullName { get; set; }
         public string Gender { get; set; }
-        public string ProfilePictureUrl { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
+        public string? NewPassword { get; set; }
+
 
     }
 

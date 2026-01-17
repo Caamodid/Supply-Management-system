@@ -17,6 +17,10 @@ namespace Infrastructure.Persistence
         public DbSet<Product> Products { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
         public DbSet<CategoryType> CategoryTypes { get; set; }
+        public DbSet<StockMovement>  StockMovements { get; set; }
+        public DbSet<Customer>   Customers { get; set; }
+        public DbSet<Sale>   Sales { get; set; }
+        public DbSet<SaleItem>    SaleItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

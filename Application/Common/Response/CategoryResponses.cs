@@ -13,6 +13,8 @@ namespace Application.Common.Response
         public DateTime CreatedAt { get; set; } 
         public string Company { get; set; }
         public Guid? BranchId { get; set; } // NULL = global category
+        public string? BranchName{ get; set; } // NULL = global category
+
 
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }

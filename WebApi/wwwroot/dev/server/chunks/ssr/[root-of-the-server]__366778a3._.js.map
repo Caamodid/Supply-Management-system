@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 26, "column": 0}, "map": {"version":3,"sources":["file:///D:/Developments/free-nextjs-admin-dashboard-main/free-nextjs-admin-dashboard-main/src/app/%28admin%29/page.tsx"],"sourcesContent":["import type { Metadata } from \"next\";\nimport React from \"react\";\nimport StatisticsChart from \"@/components/ecommerce/StatisticsChart\";\nimport RecentOrders from \"@/components/ecommerce/RecentOrders\";\nimport DemographicCard from \"@/components/ecommerce/DemographicCard\";\n\nexport const metadata: Metadata = {\n  title:\n    \"Next.js E-commerce Dashboard | TailAdmin - Next.js Dashboard Template\",\n  description: \"This is Next.js Home for TailAdmin Dashboard Template\",\n};\n\nexport default function Ecommerce() {\n  return (\n    <div className=\"grid grid-cols-12 gap-4 md:gap-6\">\n      <div className=\"col-span-12 space-y-6 xl:col-span-7\">\n\n\n      </div>\n\n      <div className=\"col-span-12 xl:col-span-5\">\n      </div>\n\n    </div>\n  );\n}\n"],"names":[],"mappings":";;;;;;;;AAMO,MAAM,WAAqB;IAChC,OACE;IACF,aAAa;AACf;AAEe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;;0BACb,8OAAC;gBAAI,WAAU;;;;;;0BAKf,8OAAC;gBAAI,WAAU;;;;;;;;;;;;AAKrB"}}]
+}
