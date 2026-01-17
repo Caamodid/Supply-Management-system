@@ -8,9 +8,10 @@ namespace Application.Common.Request
 {
     public class PayRemainingRequest
     {
-        public Guid SaleId { get; set; }
+        public Guid CustomerId { get; set; }
         public decimal Amount { get; set; }
         public string? Remark { get; set; }
+
     }
 
 }

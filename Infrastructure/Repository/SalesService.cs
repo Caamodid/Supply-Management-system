@@ -250,10 +250,8 @@ namespace Infrastructure.Repository
             }
         }
 
-        public async Task PayRemainingAsync(PayRemainingRequest request)
+        public async Task PayCustomerRemainingAsync(PayRemainingRequest request)
         {
-
-
             if (string.IsNullOrEmpty(_currentUser.UserId))
                 throw new UnauthorizedAccessException();
 
@@ -263,47 +261,45 @@ namespace Infrastructure.Repository
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                var sale = await _context.Sales
-                    .FirstOrDefaultAsync(x => x.Id == request.SaleId)
-                    ?? throw new InvalidOperationException("Sale not found");
+                // 1️⃣ Get all unpaid sales for customer (oldest first)
+                var sales = await _context.Sales
+                    .Where(x =>
+                        x.CustomerId == request.CustomerId &&
+                        x.Balance > 0 &&
+                        x.PaymentStatus != "CANCELLED")
+                    .OrderBy(x => x.CreatedAt)
+                    .ToListAsync();
 
-                if (sale.PaymentStatus == "CLOSED")
-                    throw new InvalidOperationException("Sale already closed");
+                if (!sales.Any())
+                    throw new InvalidOperationException("No unpaid sales found");
 
-                if (request.Amount > sale.Balance)
-                    throw new InvalidOperationException("Payment exceeds balance");
+                decimal remainingPayment = request.Amount;
 
-                if (sale.PaymentStatus == "CANCELLED")
-                    throw new InvalidOperationException("Cancelled sale cannot receive payment");
-
-
-                // =========================
-                // UPDATE PAYMENT
-                // =========================
-                sale.PaidAmount += request.Amount;
-                sale.Balance -= request.Amount;
-
-                // =========================
-                // UPDATE STATUS + REMARK
-                // =========================
-                if (sale.Balance <= 0)
+                foreach (var sale in sales)
                 {
-                    sale.PaymentStatus = "CLOSED";
-                    sale.Remark = null; // ✅ no remark needed anymore
+                    if (remainingPayment <= 0)
+                        break;
+
+                    decimal payAmount = Math.Min(sale.Balance, remainingPayment);
+
+                    sale.PaidAmount += payAmount;
+                    sale.Balance -= payAmount;
+                    remainingPayment -= payAmount;
+
+                    if (sale.Balance == 0)
+                    {
+                        sale.PaymentStatus = "CLOSED";
+                        sale.Remark = null;
+                    }
+                    else
+                    {
+                        sale.PaymentStatus = "PARTIAL";
+                        sale.Remark = request.Remark ?? "Partial customer payment";
+                    }
+
+                    sale.UpdatedAt = DateTime.UtcNow;
+                    sale.UpdatedBy = _currentUser.UserId;
                 }
-                else
-                {
-                    sale.PaymentStatus = "PARTIAL";
-
-                    // ✅ Save reason why payment is still partial
-                    if (string.IsNullOrWhiteSpace(request.Remark))
-                        throw new InvalidOperationException("Remark is required for partial payment");
-
-                    sale.Remark = request.Remark;
-                }
-
-                sale.UpdatedAt = DateTime.UtcNow;
-                sale.UpdatedBy = _currentUser.UserId;
 
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();

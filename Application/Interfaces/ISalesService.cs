@@ -13,7 +13,7 @@ namespace Application.Interfaces
     {
         Task<Sale> CreateSaleWithItemsAsync(CreateSalesAndSaleItemRequest request);
         Task CancelSaleAsync(CancelSaleRequest request);
-        Task PayRemainingAsync(PayRemainingRequest request);
+        Task PayCustomerRemainingAsync(PayRemainingRequest request);
         Task<SaleDetailResponse> GetSaleDetailAsync(Guid saleId);
         Task<List<SalesListResponse>> GetAllSalesAsync();
         Task<CustomerCreditDetailResponse> GetCustomerCreditDetailAsync(Guid customerId);

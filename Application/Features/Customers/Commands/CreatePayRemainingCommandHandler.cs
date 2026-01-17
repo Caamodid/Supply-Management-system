@@ -38,7 +38,7 @@ namespace Application.Features.Customers.Commands
                     _mapper.Map<PayRemainingRequest>(request.payRemainingRequest);
 
                 // 2️⃣ Execute adjustment (NO return value)
-                await _salesService.PayRemainingAsync(salesRequest);
+                await _salesService.PayCustomerRemainingAsync(salesRequest);
 
                 // 3️⃣ Build response manually (or query later if needed)
                 var responseDto = new SalesResponses
