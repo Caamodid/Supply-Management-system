@@ -318,6 +318,7 @@ namespace Infrastructure.Repository
                 join c in _context.Customers on s.CustomerId equals c.Id
                 join b in _context.Branches on s.BranchId equals b.Id
                 join u in _context.Users on s.CreatedBy equals u.Id
+                join cp in _context.Companies on b.CompanyId equals cp.Id // ✅ FIXED
                 where s.Id == saleId
                 select new SaleDetailResponse
                 {
@@ -336,7 +337,10 @@ namespace Infrastructure.Repository
                     PaymentStatus = s.PaymentStatus,
                     SaleDate = s.SaleDate,
 
-                    // ✅ CREATED BY
+                    CompanyName = cp.Name,
+                    CompanyAddress = cp.Address,
+                    CompanyPhone = cp.Phone,
+
                     CreatedBy = u.FirstName
                 }
             ).FirstOrDefaultAsync()
@@ -357,6 +361,64 @@ namespace Infrastructure.Repository
 
             return sale;
         }
+
+
+
+
+        public async Task<List<InvoiceListResponse>> GetInvoiceListAsync(
+            string? invoiceNo,
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            invoiceNo = invoiceNo?.Trim();
+
+            var endDate = toDate.Date.AddDays(1);
+
+            var query =
+                from s in _context.Sales.AsNoTracking()
+                join c in _context.Customers on s.CustomerId equals c.Id
+                select new { s, c };
+
+            // 🔹 Invoice number search (PARTIAL MATCH)
+            if (!string.IsNullOrEmpty(invoiceNo))
+            {
+                query = query.Where(x =>
+                    x.s.InvoiceNumber.Contains(invoiceNo));
+            }
+            else
+            {
+                // 🔹 Date range filter
+                query = query.Where(x =>
+                    x.s.CreatedAt >= fromDate.Date &&
+                    x.s.CreatedAt < endDate);
+            }
+
+            return await query
+                .OrderByDescending(x => x.s.CreatedAt)
+                .Select(x => new InvoiceListResponse
+                {
+                    InvoiceId = x.s.Id,
+                    InvoiceNumber = x.s.InvoiceNumber,
+                    CustomerName = x.c.Name,
+                    TotalAmount = x.s.TotalAmount,
+                    Paid = x.s.PaidAmount,
+                    discount = x.s.Discount,
+                    Balance = x.s.Balance,
+                    Status = x.s.PaymentStatus,
+                    CreatedAt = x.s.CreatedAt
+                })
+                .ToListAsync();
+        }
+
+
+
+
+
+
+
+
+
+
 
 
         public async Task<List<SalesListResponse>> GetAllSalesAsync()

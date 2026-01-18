@@ -20,6 +20,8 @@ namespace Application.Interfaces
         Task EditSaleAsync(EditSaleRequest request);
         Task<Guid> GetUserBranchIdAsync(string userId);
 
+        Task<List<InvoiceListResponse>> GetInvoiceListAsync(string InvoiceNo, DateTime FromDate, DateTime ToDate);
+
         Task<List<CustomerCreditResponse>> GetCustomerCreditsAsync(string InvoiceNo, DateTime FromDate, DateTime ToDate);
 
     }

@@ -46,6 +46,25 @@ namespace WebApi.Controllers.Customer
         }
 
 
+
+        [HttpPost("invoice-lists")]
+        public async Task<IActionResult> GetInvoiceListAsync(
+            [FromQuery] string? InvoiceNo,
+            [FromQuery] DateTime? FromDate,
+            [FromQuery] DateTime? ToDate)
+        {
+            var response = await Mediator.Send(new GetByAllInvoicesQuery
+            {
+                InvoiceNo = InvoiceNo,
+                FromDate = FromDate,
+                ToDate = ToDate
+            });
+
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+
+
         // DELETE: api/client/{id}
         [HttpDelete("delete-customer/{id}")]
         public async Task<IActionResult> DeleteCustomAsync(Guid id)
