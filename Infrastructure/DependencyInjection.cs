@@ -24,6 +24,7 @@ namespace Infrastructure
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<ISalesService, SalesService>();
+            services.AddScoped<IFinancialReportService, FinancialReportService>();
 
 
             // Your other registrations...

@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Folder Include="Features\Customers\Validators\" />
+    <Folder Include="Features\Financial\Validators\" />
     <Folder Include="Features\Products\Validators\" />
   </ItemGroup>
 
