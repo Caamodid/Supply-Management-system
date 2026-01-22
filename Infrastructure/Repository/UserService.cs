@@ -20,13 +20,15 @@ namespace Infrastructure.Repository
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly ICurrentUserService _currentUser;
+        private readonly ISalesService  _salesService;
         public UserService(
             UserManager<ApplicationUser> userManager,
-            RoleManager<ApplicationRole> roleManager, ICurrentUserService  currentUserService)
+            RoleManager<ApplicationRole> roleManager, ICurrentUserService  currentUserService , ISalesService  salesService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _currentUser = currentUserService;
+            _salesService = salesService;
         }
 
         public async Task<ResponseWrapper<string>> CreateUserAsync(CreateUserRequest request)
@@ -34,8 +36,6 @@ namespace Infrastructure.Repository
 
             if (string.IsNullOrEmpty(_currentUser.UserId))
                 throw new UnauthorizedAccessException();
-
-
             var user = new ApplicationUser
             {
                 Email = request.Email,

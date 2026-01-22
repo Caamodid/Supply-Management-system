@@ -61,7 +61,7 @@ namespace Application.Interfaces
         // STOCK QUERIES
         // =======================
         Task<List<StockListResponse>> GetStockListAsync(Guid? branchId = null);
-        Task<List<StockMovementResponse>> GetAllStockMovementsAsync();
+        Task<List<StockMovementResponse>>  GetAllStockMovementsAsync(DateTime? fromDate, DateTime? toDate);
         Task<List<StockTransferResponse>> GetAllStockTransfersAsync();
         Task<List<ProductWithCategoryAndWithCategoryTypeAndBranchResponses>> ProductWithCategoryAndWithCategoryTypeAsync();
     }

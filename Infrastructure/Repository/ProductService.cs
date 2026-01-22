@@ -546,35 +546,58 @@ namespace Infrastructure.Repository
 
 
 
-
-
         public async Task AdjustStockAsync(StockAdjustmentRequest request)
         {
-
             if (string.IsNullOrEmpty(_currentUser.UserId))
                 throw new UnauthorizedAccessException();
+            // ✅ 1. Generate transfer reference (VERY IMPORTANT)
+            var reference = $"TRF-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}";
 
+            // Fetch the inventory record
+            var inventory = await _context.Inventories
+                .FirstOrDefaultAsync(x => x.ProductId == request.ProductId && x.BranchId == request.BranchId);
 
+            if (inventory == null)
+                throw new KeyNotFoundException("Inventory not found for the specified product and branch.");
 
-            var inventory = await _context.Inventories.FirstAsync(x =>
-                x.ProductId == request.ProductId && x.BranchId == request.BranchId);
+            // Validate new quantity
+            if (request.NewQuantity < 0)
+                throw new InvalidOperationException("Quantity cannot be negative.");
 
+            // Calculate the difference
             var diff = request.NewQuantity - inventory.Quantity;
-            inventory.Quantity = request.NewQuantity;
 
-            _context.StockMovements.Add(new StockMovement
+            // Begin transaction
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
-                ProductId = request.ProductId,
-                BranchId = request.BranchId,
-                QuantityChange = diff,
-                MovementType = StockMovementTypes.Adjustment,
-                Reason = request.Reason,
-                CreatedBy = _currentUser.UserId,
-                CreatedAt = DateTime.UtcNow
-            });
+                // Update inventory quantity
+                inventory.Quantity = request.NewQuantity;
 
-            await _context.SaveChangesAsync();
+                // Add stock movement record
+                _context.StockMovements.Add(new StockMovement
+                {
+                    ProductId = request.ProductId,
+                    BranchId = request.BranchId,
+                    QuantityChange = diff,
+                    MovementType = StockMovementTypes.Adjustment,
+                    Reason = request.Reason,
+                    CreatedBy = _currentUser.UserId,
+                    CreatedAt = DateTime.UtcNow,
+                    Reference = reference,
+                });
+
+                // Save changes and commit transaction
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
         }
+
 
         // =========================
         // STOCK QUERIES
@@ -598,13 +621,22 @@ namespace Infrastructure.Repository
                 }).ToListAsync();
         }
 
-        public async Task<List<StockMovementResponse>> GetAllStockMovementsAsync()
+        public async Task<List<StockMovementResponse>> GetAllStockMovementsAsync(DateTime? fromDate, DateTime? toDate)
         {
+            // Default to today's date if fromDate or toDate is null and ensure they are in UTC
+            fromDate ??= DateTime.UtcNow.Date; // Default to today's date if fromDate is null
+            toDate ??= DateTime.UtcNow.Date.AddDays(1).AddTicks(-1); // Default to the end of today (11:59:59 PM) if toDate is null
+
+            // Ensure the DateTime values have UTC Kind
+            fromDate = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+            toDate = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc);
+
             return await (
                 from sm in _context.StockMovements.AsNoTracking()
                 join p in _context.Products on sm.ProductId equals p.Id
                 join b in _context.Branches on sm.BranchId equals b.Id
                 join u in _context.Users on sm.CreatedBy equals u.Id
+                where sm.CreatedAt >= fromDate && sm.CreatedAt <= toDate // Apply date filter
                 select new StockMovementResponse
                 {
                     StockMovementId = sm.Id,
@@ -617,6 +649,7 @@ namespace Infrastructure.Repository
                     CreatedAt = sm.CreatedAt
                 }).ToListAsync();
         }
+
 
         public async Task OpenProductConversionAsync(OpenProductConversionRequest request)
         {

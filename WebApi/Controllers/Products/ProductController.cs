@@ -172,14 +172,24 @@ namespace WebApi.Controllers.Products
 
 
 
-
         // POST: api/client
         [HttpPost("stockMovements-list")]
-        public async Task<IActionResult> GetAllStockMovementsAsync()
+        public async Task<IActionResult> GetAllStockMovementsAsync(DateTime? fromDate, DateTime? toDate)
         {
-            var response = await Mediator.Send(new GetByAllSGetAllStockMovementsQuery {});
+            // Create a new query object and pass the fromDate and toDate parameters
+            var query = new GetByAllSGetAllStockMovementsQuery
+            {
+                fromDate = fromDate,
+                toDate = toDate
+            };
+
+            // Send the query via Mediator to get the response
+            var response = await Mediator.Send(query);
+
+            // Return the appropriate response based on the result
             return response.Success ? Ok(response) : BadRequest(response);
         }
+
 
 
 

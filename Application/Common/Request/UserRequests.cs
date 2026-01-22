@@ -14,6 +14,8 @@ namespace Application.Common.Request
         public string Address { get; set; } = "Somalia";
         public string Email { get; set; }
         public string Role { get; set; } = "User";
+        public Guid ? BranchId { get; set; }
+
 
 
     }
@@ -30,6 +32,8 @@ namespace Application.Common.Request
         public string Gender { get; set; }
         public string Role { get; set; } = "User";
         public string? NewPassword { get; set; }
+        public Guid? BranchId { get; set; }
+
 
 
     }
