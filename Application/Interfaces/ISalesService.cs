@@ -16,9 +16,11 @@ namespace Application.Interfaces
         Task PayCustomerRemainingAsync(PayRemainingRequest request);
         Task<SaleDetailResponse> GetSaleDetailAsync(Guid saleId);
         Task<List<SalesListResponse>> GetAllSalesAsync();
+        Task<List<SalesListResponse>> GetAllSalesWalkAsync(DateTime? FromDate, DateTime? ToDate);
         Task<CustomerCreditDetailResponse> GetCustomerCreditDetailAsync(Guid customerId);
         Task EditSaleAsync(EditSaleRequest request);
         Task<Guid> GetUserBranchIdAsync(string userId);
+        Task<Guid> GetUserCompanyAsync(string branchid);
 
         Task<List<InvoiceListResponse>> GetInvoiceListAsync(string InvoiceNo, DateTime FromDate, DateTime ToDate);
 

@@ -12,31 +12,27 @@ builder.Services.AddWebApiServices(builder.Configuration);
 // Controllers + enum as string
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
-    options.JsonSerializerOptions.Converters.Add(
-        new JsonStringEnumConverter()
-    ));
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        )
+    );
 
 // ================================
-// 2️⃣ CORS configuration (ENV-AWARE)
+// 2️⃣ CORS (FIXED & IIS-SAFE)
 // ================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("KahiyeApp", policy =>
     {
-        if (builder.Environment.IsDevelopment())
-        {
-            // Local frontend
-            policy.WithOrigins("http://localhost:3000");
-        }
-        else
-        {
-            // Production frontend (CHANGE THIS)
-            policy.WithOrigins("https://your-production-domain.com");
-        }
-
-        policy.AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        policy
+            .WithOrigins(
+                "http://localhost",
+                "http://localhost:3000",
+                "http://127.0.0.1"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -56,11 +52,7 @@ app.UseGlobalExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "RentingApp API v1");
-        c.RoutePrefix = "swagger";
-    });
+    app.UseSwaggerUI();
 }
 
 // ================================
@@ -72,27 +64,54 @@ if (!app.Environment.IsDevelopment())
 }
 
 // ================================
-// 7️⃣ Middleware order (IMPORTANT)
+// 7️⃣ 🔥 REQUIRED FOR CORS
+// ================================
+app.UseRouting();
+
+// ================================
+// 8️⃣ 🔥 CORS MUST BE HERE
 // ================================
 app.UseCors("KahiyeApp");
 
+// ================================
+// 9️⃣ 🔥 ALLOW PREFLIGHT (OPTIONS)
+// ================================
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == HttpMethods.Options)
+    {
+        context.Response.StatusCode = StatusCodes.Status204NoContent;
+        return;
+    }
+
+    await next();
+});
+
+// ================================
+// 🔟 Auth AFTER CORS
+// ================================
 app.UseAuthentication();
 app.UseAuthorization();
 
 // ================================
-// 8️⃣ Static files (React build)
+// 1️⃣1️⃣ Static files (if any)
 // ================================
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // ================================
-// 9️⃣ Routing
+// 1️⃣2️⃣ API & routing
 // ================================
+app.MapGet("/api/health", () =>
+{
+    return Results.Ok(new { status = "ok" });
+});
+
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 // ================================
-// 🔟 Seeder (DEV ONLY)
+// 1️⃣3️⃣ Seeder (DEV ONLY)
 // ================================
 if (app.Environment.IsDevelopment())
 {
@@ -100,6 +119,6 @@ if (app.Environment.IsDevelopment())
 }
 
 // ================================
-// 1️⃣1️⃣ Run app
+// 1️⃣4️⃣ Run
 // ================================
 app.Run();

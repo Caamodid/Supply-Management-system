@@ -151,16 +151,26 @@ namespace WebApi
             // ============================
             // CORS
             // ============================
+            // ============================
+            // CORS (FIXED)
+            // ============================
             services.AddCors(options =>
             {
                 options.AddPolicy("KahiyeApp", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
+                    policy
+                        .WithOrigins(
+                            "http://localhost",
+                            "http://localhost:3000",
+                            "http://127.0.0.1",
+                            "http://localhost:5173" // keep if you still use Vite sometimes
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
+
 
             // ============================
             // Controllers & Swagger

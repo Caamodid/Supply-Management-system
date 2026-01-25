@@ -18,11 +18,13 @@ namespace Infrastructure.Repository
     {
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly ISalesService _salesService;
 
-        public ProductService(AppDbContext context, ICurrentUserService currentUserService)
+        public ProductService(AppDbContext context, ICurrentUserService currentUserService , ISalesService salesService)
         {
             _context = context;
             _currentUser = currentUserService;
+            _salesService = salesService;
         }
 
         // =========================
@@ -37,6 +39,9 @@ namespace Infrastructure.Repository
             if (string.IsNullOrEmpty(_currentUser.UserId))
                 throw new UnauthorizedAccessException();
 
+            var branchIds = await _salesService.GetUserBranchIdAsync(_currentUser.UserId);
+            //var companyId = await _salesService.GetUserCompanyAsync(branchId.ToString());
+
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -49,7 +54,7 @@ namespace Infrastructure.Repository
                 await _context.Inventories.AddAsync(new Inventory
                 {
                     ProductId = product.Id,
-                    BranchId = branchId,
+                    BranchId = branchIds,
                     Quantity = quantity,
                     MinStockLevel = minStockLevel,
                     CreatedBy = _currentUser.UserId,
@@ -64,7 +69,7 @@ namespace Infrastructure.Repository
                     _context.StockMovements.Add(new StockMovement
                     {
                         ProductId = product.Id,
-                        BranchId = branchId,
+                        BranchId = branchIds,
                         QuantityChange = quantity,
                         MovementType = StockMovementTypes.Receive,
                         Reason = "Initial stock",

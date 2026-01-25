@@ -112,6 +112,15 @@ namespace WebApi.Controllers.Customer
         }
 
 
+        // POST: api/client
+        [HttpPost("sales-walk")]
+        public async Task<IActionResult> GetAllSalesWalkAsync(DateTime? fromDate, DateTime? foDate)
+        {
+            var response = await Mediator.Send(new GetByAllGetAllWalkQuery {FromDate = fromDate, ToDate = foDate });
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+
 
 
         // POST: api/client

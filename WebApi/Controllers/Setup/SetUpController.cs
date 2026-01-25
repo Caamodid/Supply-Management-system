@@ -81,7 +81,7 @@ namespace WebApi.Controllers.Setup
         }
 
         // GET: api/client
-        [Authorize(Roles = "Administrator")]
+        //[Authorize(Roles = "Administrator")]
         [HttpGet("branches")]
         public async Task<IActionResult> GetAllBranchAsync()
         {

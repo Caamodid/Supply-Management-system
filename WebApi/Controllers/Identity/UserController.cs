@@ -76,7 +76,7 @@ namespace WebApi.Controllers.Identity
 
         //  1️⃣ Assign role to a user
         [HttpGet("all")]
-        [Authorize(Roles = "Administrator")]
+        //[Authorize(Roles = "Administrator")]
         public async Task<IActionResult> GetAllUsers()
         {
             var response = await _mediator.Send(new GetAllUsersQuery());

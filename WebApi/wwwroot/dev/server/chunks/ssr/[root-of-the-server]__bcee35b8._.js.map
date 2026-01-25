@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 26, "column": 0}, "map": {"version":3,"sources":["file:///D:/Developments/free-nextjs-admin-dashboard-main/free-nextjs-admin-dashboard-main/src/app/%28admin%29/users/page.tsx"],"sourcesContent":["\r\n\r\nexport default function TestFormPage() {\r\n  return (\r\n    <div className=\"\">\r\n      <h1 className=\"text-2xl font-bold\">This is the Test Form Page</h1>\r\n    </div>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;;AAEe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC;YAAG,WAAU;sBAAqB;;;;;;;;;;;AAGzC"}}]
-}

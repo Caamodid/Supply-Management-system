@@ -102,9 +102,10 @@ namespace Infrastructure.Repository
             user.FirstName = request.FullName;
             user.PhoneNumber = request.Phone;
             user.Gender = request.Gender;
-
+            user.BranchId = request.BranchId;
             user.UpdatedAt = DateTime.UtcNow;
             user.CreatedBy = _currentUser.UserId; // or UserId
+           
 
             /* ---------- Update User ---------- */
             var updateResult = await _userManager.UpdateAsync(user);

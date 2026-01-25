@@ -16,11 +16,13 @@ namespace Infrastructure.Repository
     {
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly ISalesService  _salesService;
 
-        public CompanyService(AppDbContext context, ICurrentUserService currentUserService)
+        public CompanyService(AppDbContext context, ICurrentUserService currentUserService , ISalesService salesService)
         {
             _context = context;
             _currentUser = currentUserService;
+            _salesService = salesService;
         }
 
 
@@ -189,7 +191,11 @@ namespace Infrastructure.Repository
         {
             if (string.IsNullOrEmpty(_currentUser.UserId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
+            var branchId = await _salesService.GetUserBranchIdAsync(_currentUser.UserId);
+            var companyId = await _salesService.GetUserCompanyAsync(branchId.ToString());
 
+            request.BranchId = branchId;
+            request.CompanyId = companyId;
             request.CreatedBy = _currentUser.UserId;
             await _context.Categories.AddAsync(request);
             await _context.SaveChangesAsync();

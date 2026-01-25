@@ -44,6 +44,30 @@ namespace Infrastructure.Repository
             return branchId.Value; // ✅ FIX
         }
 
+        public async Task<Guid> GetUserCompanyAsync(string branchid)
+        {
+            if (string.IsNullOrWhiteSpace(branchid))  // Check if branchid is provided
+                throw new ArgumentException("Branch ID is required.", nameof(branchid));
+
+            if (!Guid.TryParse(branchid, out var branchGuid))  // Safely parse branchid to a Guid
+                throw new ArgumentException("Invalid branch ID format.", nameof(branchid));
+
+            Guid? companyId = await _context.Branches
+                .AsNoTracking()
+                .Where(u => u.Id == branchGuid)  // Match branch ID with parsed Guid
+                .Select(u => u.CompanyId)        // Select the CompanyId associated with the branch
+                .FirstOrDefaultAsync();
+
+            if (!companyId.HasValue)  // Check if a valid CompanyId was found
+                throw new InvalidOperationException("Branch not found for the given ID.");
+
+            return companyId.Value;  // Return the CompanyId
+        }
+
+
+
+
+
 
 
 
@@ -409,6 +433,51 @@ namespace Infrastructure.Repository
                 })
                 .ToListAsync();
         }
+
+
+
+
+
+
+
+
+
+
+
+        public async Task<List<SalesListResponse>> GetAllSalesWalkAsync(DateTime? FromDate, DateTime? ToDate)
+        {
+            // Haddii null → maanta (UTC)
+            DateTime fromDateUtc = (FromDate ?? DateTime.UtcNow.Date).ToUniversalTime();
+
+            DateTime toDateUtc = (ToDate ?? DateTime.UtcNow.Date)
+                .ToUniversalTime()
+                .AddDays(1)
+                .AddTicks(-1);
+
+            return await (
+                from s in _context.Sales.AsNoTracking()
+                join b in _context.Branches on s.BranchId equals b.Id
+                where s.SaleDate >= fromDateUtc && s.SaleDate <= toDateUtc 
+                && s.CustomerId == null
+                orderby s.SaleDate descending
+                select new SalesListResponse
+                {
+                    SaleId = s.Id,
+                    InvoiceNumber = s.InvoiceNumber,
+                    BranchName = b.BranchName,
+                    SubTotal = s.SubTotal,
+                    Discount = s.Discount,
+                    TotalAmount = s.TotalAmount,
+                    PaidAmount = s.PaidAmount,
+                    Balance = s.Balance,
+                    PaymentStatus = s.PaymentStatus,
+                    SaleDate = s.SaleDate
+                }
+            ).ToListAsync();
+        }
+
+
+
 
 
 
