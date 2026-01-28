@@ -1,5 +1,6 @@
 ﻿using Application.Common.Request;
 using Application.Common.Response;
+using Application.Features.Financial.Commands;
 using Application.Features.Financial.Commands.CreateExpense;
 using Application.Features.Financial.Commands.CreateExpenseCategory;
 using Application.Features.Financial.Commands.EditExpenseCategory;
@@ -154,6 +155,62 @@ namespace WebApi.Controllers
             return response.Success ? Ok(response) : BadRequest(response);
         }
 
+
+
+
+        [HttpPost("deposit")]
+        public async Task<IActionResult> Deposit(
+            [FromBody] DepositCommand command)
+        {
+            var response = await Mediator.Send(command);
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+
+
+        [HttpPost("transaction")]
+        public async Task<IActionResult> WalletTransaction(
+            [FromBody] WalletTransactionCommand command)
+        {
+            var response = await Mediator.Send(command);
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+
+        [HttpGet("customers")]
+        public async Task<IActionResult> GetAllWalletCustomers(
+    [FromQuery] string? phone,
+    [FromQuery] DateTime? fromDate,
+    [FromQuery] DateTime? toDate)
+        {
+            var response = await Mediator.Send(
+                new GetAllWalletCustomersQuery
+                {
+                    Phone = phone,
+                    FromDate = fromDate,
+                    ToDate = toDate
+                });
+
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+
+        [HttpGet("customer-paper")]
+        public async Task<IActionResult> GetCustomerTransactionPaper(
+            [FromQuery] Guid customerId,
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate)
+        {
+            var response = await Mediator.Send(
+                new GetCustomerTransactionPaperQuery
+                {
+                    CustomerId = customerId,
+                    FromDate = fromDate,
+                    ToDate = toDate
+                });
+
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
 
 
     }

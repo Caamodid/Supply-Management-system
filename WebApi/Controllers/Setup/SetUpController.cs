@@ -1,4 +1,5 @@
 ﻿using Application.Common.Request;
+using Application.Features.Products.Commands;
 using Application.Features.Setup.Commands;
 using Application.Features.Setup.Queries;
 using Microsoft.AspNetCore.Authorization;
@@ -94,6 +95,14 @@ namespace WebApi.Controllers.Setup
         public async Task<IActionResult> DeleteBranchAsync(Guid id)
         {
             var response = await Mediator.Send(new DeleteBranchCommand { Id = id });
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+        // DELETE: api/client/{id}
+        [HttpDelete("delete-product/{id}")]
+        public async Task<IActionResult> deleteProductAsync(Guid id)
+        {
+            var response = await Mediator.Send(new DeleteProductCommand { Id = id });
             return response.Success ? Ok(response) : BadRequest(response);
         }
 

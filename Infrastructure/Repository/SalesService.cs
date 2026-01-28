@@ -376,7 +376,7 @@ namespace Infrastructure.Repository
                 where i.SaleId == saleId
                 select new SaleItemDetailResponse
                 {
-                    ProductName = p.Name,
+                    ProductName = p.Name +"-unit-"+p.Unit,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
                     LineTotal = i.LineTotal
@@ -490,27 +490,41 @@ namespace Infrastructure.Repository
 
 
 
-        public async Task<List<SalesListResponse>> GetAllSalesAsync()
+        public async Task<List<SalesListResponse>> GetAllSalesAsync(DateTime? fromDate, DateTime? toDate)
         {
+            // If no dates are provided, use the last 3 days by default
+            if (!fromDate.HasValue && !toDate.HasValue)
+            {
+                fromDate = DateTime.UtcNow.AddDays(-3); // 3 days ago
+                toDate = DateTime.UtcNow; // Today
+            }
+            else
+            {
+                // Ensure toDate is always the end of the day
+                toDate = toDate?.Date.AddDays(1).AddTicks(-1);
+            }
+
+            // Ensure that both fromDate and toDate are in UTC
+            fromDate = fromDate?.ToUniversalTime();
+            toDate = toDate?.ToUniversalTime();
+
             return await (
                 from s in _context.Sales.AsNoTracking()
                 join c in _context.Customers on s.CustomerId equals c.Id
                 join b in _context.Branches on s.BranchId equals b.Id
+                where s.SaleDate >= fromDate && s.SaleDate <= toDate // Filter based on date range
                 orderby s.SaleDate descending
                 select new SalesListResponse
                 {
                     SaleId = s.Id,
                     InvoiceNumber = s.InvoiceNumber,
-
                     CustomerName = c.Name,
                     BranchName = b.BranchName,
-
                     SubTotal = s.SubTotal,
                     Discount = s.Discount,
                     TotalAmount = s.TotalAmount,
                     PaidAmount = s.PaidAmount,
                     Balance = s.Balance,
-
                     PaymentStatus = s.PaymentStatus,
                     SaleDate = s.SaleDate
                 }

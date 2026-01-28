@@ -105,9 +105,9 @@ namespace WebApi.Controllers.Customer
 
         // POST: api/client
         [HttpPost("sales-lists")]
-        public async Task<IActionResult> GetAllSalesAsync()
+        public async Task<IActionResult> GetAllSalesAsync(DateTime? fromDate, DateTime? toDate)
         {
-            var response = await Mediator.Send(new GetByAllGetAllSalesQuery { });
+            var response = await Mediator.Send(new GetByAllGetAllSalesQuery { FromDate = fromDate , ToDate = toDate });
             return response.Success ? Ok(response) : BadRequest(response);
         }
 

@@ -210,6 +210,21 @@ namespace WebApi.Controllers.Products
         }
 
 
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateProduct(Guid id ,[FromBody] UpdateProductRequest request)
+        {
+            var response = await Mediator.Send(
+                new UpdateProductsCommand
+                {
+                    Id = id,
+                    UpdateProduct = request
+                });
+
+            return response.Success
+                ? Ok(response)
+                : BadRequest(response);
+        }
+
 
 
 

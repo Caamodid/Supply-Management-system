@@ -14,18 +14,22 @@ namespace Infrastructure.Repository
     {
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly ISalesService _salesService;
 
-        public CustomerService(AppDbContext context, ICurrentUserService currentUserService)
+        public CustomerService(AppDbContext context, ICurrentUserService currentUserService, ISalesService salesService)
         {
             _context = context;
             _currentUser = currentUserService;
+            _salesService = salesService;
         }
 
         public async Task<Domain.Entities.Customer> CreateCustomAsync(Domain.Entities.Customer request)
         {
             if (string.IsNullOrEmpty(_currentUser.UserId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
+            var branchId = await _salesService.GetUserBranchIdAsync(_currentUser.UserId);
             request.CreatedBy = _currentUser.UserId;
+            request.BranchId = branchId;
             await _context.Customers.AddAsync(request);
             await _context.SaveChangesAsync();
             return request;

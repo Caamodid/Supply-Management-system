@@ -23,6 +23,8 @@ namespace Infrastructure.Persistence
         public DbSet<Expense>  Expenses { get; set; }
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
         public DbSet<SaleItem>    SaleItems { get; set; }
+        public DbSet<DepositTransaction>  DepositTransactions { get; set; }
+        public DbSet<CustomerWallet> CustomerWallets { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

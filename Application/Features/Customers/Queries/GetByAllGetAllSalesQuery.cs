@@ -14,6 +14,8 @@ namespace Application.Features.Customers.Queries
 {
     public class GetByAllGetAllSalesQuery : IRequest<IResponseWrapper<List<SalesListResponse>>>, IValidateMe
     {
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
     }
 
     public class GetByAllGetAllSalesQueryHandler : IRequestHandler<GetByAllGetAllSalesQuery, IResponseWrapper<List<SalesListResponse>>>
@@ -28,7 +30,7 @@ namespace Application.Features.Customers.Queries
         {
             try
             {
-                var customers = await _salesService.GetAllSalesAsync();
+                var customers = await _salesService.GetAllSalesAsync(request.FromDate ,request.ToDate);
                 return await ResponseWrapper<List<SalesListResponse>>.SuccessAsync(customers, "Sales list retrieved successfully.");
             }
             catch (Exception ex)

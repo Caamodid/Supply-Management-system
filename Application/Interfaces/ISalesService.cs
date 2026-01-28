@@ -15,7 +15,7 @@ namespace Application.Interfaces
         Task CancelSaleAsync(CancelSaleRequest request);
         Task PayCustomerRemainingAsync(PayRemainingRequest request);
         Task<SaleDetailResponse> GetSaleDetailAsync(Guid saleId);
-        Task<List<SalesListResponse>> GetAllSalesAsync();
+        Task<List<SalesListResponse>> GetAllSalesAsync(DateTime? fromDate, DateTime? foDate);
         Task<List<SalesListResponse>> GetAllSalesWalkAsync(DateTime? FromDate, DateTime? ToDate);
         Task<CustomerCreditDetailResponse> GetCustomerCreditDetailAsync(Guid customerId);
         Task EditSaleAsync(EditSaleRequest request);

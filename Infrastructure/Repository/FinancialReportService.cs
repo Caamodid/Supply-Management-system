@@ -475,5 +475,339 @@ namespace Infrastructure.Repository
         }
 
 
+
+        public async Task DepositAsync(Guid customerId, decimal amount, string remark)
+        {
+            if (amount <= 0)
+                throw new ArgumentException("Amount must be greater than zero.");
+
+            if (string.IsNullOrEmpty(_currentUser.UserId))
+                throw new UnauthorizedAccessException();
+
+            // start database transaction (VERY important for money)
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Get or create wallet
+                var wallet = await _context.CustomerWallets
+                    .FirstOrDefaultAsync(w => w.CustomerId == customerId);
+
+                if (wallet == null)
+                {
+                    wallet = new CustomerWallet
+                    {
+                        CustomerId = customerId,
+                        Balance = 0,
+                        CreatedBy = _currentUser.UserId,
+                    };
+
+                    await _context.CustomerWallets.AddAsync(wallet);
+                }
+
+                // 2. Create deposit transaction (ledger record)
+                var transaction = new DepositTransaction
+                {
+                    CustomerId = customerId,
+                    Amount = amount, // positive = deposit
+                    TransactionType = "Deposit",
+                    Remark = remark,
+                    CreatedBy = _currentUser.UserId,
+                };
+
+                await _context.DepositTransactions.AddAsync(transaction);
+
+                // 3. Update wallet balance
+                wallet.Balance += amount;
+
+                // 4. Save changes
+                await _context.SaveChangesAsync();
+
+                // 5. Commit DB transaction
+                await dbTransaction.CommitAsync();
+            }
+            catch
+            {
+                // rollback on any error
+                await dbTransaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+
+
+        public async Task WalletTransactionAsync(
+                     Guid customerId,
+    decimal amount,
+    string transactionType,
+    string remark)
+        {
+            if (amount <= 0)
+                throw new ArgumentException("Amount must be greater than zero.");
+
+            if (string.IsNullOrWhiteSpace(transactionType))
+                throw new ArgumentException("Transaction type is required.");
+
+            if (string.IsNullOrEmpty(_currentUser.UserId))
+                throw new UnauthorizedAccessException();
+
+            // Normalize transaction type (safety)
+            transactionType = transactionType.Trim();
+
+            // Start DB transaction (VERY IMPORTANT)
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Get existing wallet (DO NOT CREATE)
+                var wallet = await _context.CustomerWallets
+                    .FirstOrDefaultAsync(w => w.CustomerId == customerId);
+
+                if (wallet == null)
+                    throw new InvalidOperationException("Customer wallet not found.");
+
+                // 2. Decide balance effect
+                decimal signedAmount;
+
+                switch (transactionType)
+                {
+                    // REDUCE wallet
+                    case "Purchase":
+                    case "OwnerUse":
+                        if (wallet.Balance < amount)
+                            throw new InvalidOperationException("Insufficient wallet balance.");
+
+                        signedAmount = -amount;
+                        break;
+
+                    // INCREASE wallet
+                    case "Refund":
+                    case "OwnerReturn":
+                        signedAmount = amount;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid transaction type.");
+                }
+
+                // 3. Create transaction record (ledger)
+                var transaction = new DepositTransaction
+                {
+                    CustomerId = customerId,
+                    Amount = signedAmount,
+                    TransactionType = transactionType,
+                    Remark = remark,
+                   CreatedBy = _currentUser.UserId,
+                };
+
+                await _context.DepositTransactions.AddAsync(transaction);
+
+                // 4. Update wallet balance
+                wallet.Balance += signedAmount;
+
+                // 5. Save changes
+                await _context.SaveChangesAsync();
+
+                // 6. Commit DB transaction
+                await dbTransaction.CommitAsync();
+            }
+            catch
+            {
+                // Rollback on any failure
+                await dbTransaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+
+
+
+        public async Task<List<CustomerWalletSimpleResponse>> GetAllWalletCustomersAsync(
+      string? phone,
+      DateTime? fromDate,
+      DateTime? toDate)
+        {
+            // 🔹 Normalize incoming dates to UTC
+            if (fromDate.HasValue && fromDate.Value.Kind == DateTimeKind.Unspecified)
+                fromDate = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+
+            if (toDate.HasValue && toDate.Value.Kind == DateTimeKind.Unspecified)
+                toDate = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc);
+
+            // 🔹 Default date range = current month (UTC)
+            if (!fromDate.HasValue && !toDate.HasValue)
+            {
+                var now = DateTime.UtcNow;
+
+                fromDate = DateTime.SpecifyKind(
+                    new DateTime(now.Year, now.Month, 1),
+                    DateTimeKind.Utc);
+
+                toDate = DateTime.SpecifyKind(
+                    fromDate.Value.AddMonths(1).AddDays(-1),
+                    DateTimeKind.Utc);
+            }
+
+            var query =
+                from w in _context.CustomerWallets
+                join c in _context.Customers
+                    on w.CustomerId equals c.Id
+                join u in _context.Users
+                    on w.CreatedBy equals u.Id into userJoin
+                from user in userJoin.DefaultIfEmpty()
+                select new
+                {
+                    Wallet = w,
+                    Customer = c,
+                    UserName = user != null ? user.UserName : null
+                };
+
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                query = query.Where(x =>
+                    x.Customer.Phone.Contains(phone));
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(x =>
+                    x.Wallet.CreatedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(x =>
+                    x.Wallet.CreatedAt <= toDate.Value);
+            }
+
+            var result = await query
+                .OrderByDescending(x => x.Wallet.CreatedAt)
+                .Select(x => new CustomerWalletSimpleResponse
+                {
+                    CustomerId = x.Customer.Id,
+                    CustomerName = x.Customer.Name,
+                    CustomerPhone = x.Customer.Phone,
+                    Balance = x.Wallet.Balance,
+                    CreatedAt = x.Wallet.CreatedAt,
+                    CreatedBy = x.UserName
+                })
+                .ToListAsync();
+
+            return result;
+        }
+
+
+
+        public async Task<CustomerTransactionPaperResponse>
+        GetCustomerTransactionPaperAsync(
+            Guid customerId,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            // =========================
+            // 0️⃣ Normalize incoming dates to UTC
+            // =========================
+            if (fromDate.HasValue && fromDate.Value.Kind == DateTimeKind.Unspecified)
+                fromDate = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+
+            if (toDate.HasValue && toDate.Value.Kind == DateTimeKind.Unspecified)
+                toDate = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc);
+
+            // =========================
+            // 1️⃣ Default date = current month (UTC)
+            // =========================
+            if (!fromDate.HasValue && !toDate.HasValue)
+            {
+                var now = DateTime.UtcNow;
+
+                fromDate = DateTime.SpecifyKind(
+                    new DateTime(now.Year, now.Month, 1),
+                    DateTimeKind.Utc);
+
+                toDate = DateTime.SpecifyKind(
+                    fromDate.Value.AddMonths(1).AddDays(-1),
+                    DateTimeKind.Utc);
+            }
+
+            // =========================
+            // 2️⃣ HEADER: Customer + Wallet
+            // =========================
+            var header = await (
+                from w in _context.CustomerWallets
+                join c in _context.Customers
+                    on w.CustomerId equals c.Id
+                where c.Id == customerId
+                select new
+                {
+                    c.Id,
+                    c.Name,
+                    c.Phone,
+                    w.Balance
+                }
+            ).FirstOrDefaultAsync();
+
+            if (header == null)
+                throw new InvalidOperationException("Customer wallet not found.");
+
+            // =========================
+            // 3️⃣ DETAILS: Transactions
+            // =========================
+            var transactionsQuery =
+                from t in _context.DepositTransactions
+                join u in _context.Users
+                    on t.CreatedBy equals u.Id into userJoin
+                from user in userJoin.DefaultIfEmpty()
+                where t.CustomerId == customerId
+                select new
+                {
+                    Transaction = t,
+                    UserName = user != null ? user.UserName : null
+                };
+
+            if (fromDate.HasValue)
+            {
+                transactionsQuery =
+                    transactionsQuery.Where(x =>
+                        x.Transaction.CreatedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                transactionsQuery =
+                    transactionsQuery.Where(x =>
+                        x.Transaction.CreatedAt <= toDate.Value);
+            }
+
+            var transactions = await transactionsQuery
+                .OrderByDescending(x => x.Transaction.CreatedAt)
+                .Select(x => new CustomerTransactionDetailItem
+                {
+                    TransactionId = x.Transaction.Id,
+                    TransactionDate = x.Transaction.CreatedAt,
+                    TransactionType = x.Transaction.TransactionType,
+                    Amount = x.Transaction.Amount,
+                    CreatedBy = x.UserName,
+                    Remark = x.Transaction.Remark
+                })
+                .ToListAsync();
+
+            // =========================
+            // 4️⃣ COMBINE (Paper Style)
+            // =========================
+            return new CustomerTransactionPaperResponse
+            {
+                CustomerId = header.Id,
+                CustomerName = header.Name,
+                CustomerPhone = header.Phone,
+                Balance = header.Balance,
+                Transactions = transactions
+            };
+        }
+
+
+
+
     }
 }

@@ -103,6 +103,7 @@ namespace Infrastructure.Repository
         {
             if (string.IsNullOrEmpty(_currentUser.UserId))
                 throw new UnauthorizedAccessException();
+            branchId = await GetBranchIdByCategoryAsync(request.CategoryId);
 
             using var tx = await _context.Database.BeginTransactionAsync();
             try
@@ -143,15 +144,27 @@ namespace Infrastructure.Repository
         // =========================
         // DELETE / GET PRODUCT
         // =========================
-        public async Task<Guid> DeleteProdAsync(Guid id)
+        public async Task<bool> DeleteProdAsync(Guid id)
         {
-            var product = await _context.Products.FindAsync(id)
-                ?? throw new KeyNotFoundException("Product not found");
+            if (string.IsNullOrEmpty(_currentUser.UserId))
+                throw new UnauthorizedAccessException();
 
-            _context.Products.Remove(product);
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null)
+                return false;
+
+            product.IsActive = false;            
+            product.UpdatedBy = _currentUser.UserId;   
+            product.UpdatedAt = DateTime.UtcNow;       
+
+            _context.Products.Update(product);
             await _context.SaveChangesAsync();
-            return id;
+
+            return true;
         }
+
+
 
         public async Task<Product?> GetByIdProdAsync(Guid id)
         {
@@ -165,6 +178,7 @@ namespace Infrastructure.Repository
         {
             return await (
                 from p in _context.Products.AsNoTracking()
+                .Where(p => p.IsActive)
 
                 join c in _context.Categories
                     on p.CategoryId equals c.Id
@@ -212,6 +226,7 @@ namespace Infrastructure.Repository
         {
             return await (
                 from p in _context.Products.AsNoTracking()
+                                        .Where(p => p.IsActive)
                 join i in _context.Inventories
                     on p.Id equals i.ProductId into inv
                 from inventory in inv.DefaultIfEmpty()
@@ -219,7 +234,7 @@ namespace Infrastructure.Repository
                 select new ProductQntyResponses
                 {
                     Id = p.Id,
-                    Name = p.Name,
+                    Name = $"{p.Name} - {(inventory != null ? inventory.Quantity : 0)} qunty - {p.Unit}",
                     Unit = p.Unit,
                     SellPrice = p.SellPrice,
                     WholesalePrice = p.WholesalePrice,
@@ -709,6 +724,19 @@ namespace Infrastructure.Repository
 
 
 
+        private async Task<Guid> GetBranchIdByCategoryAsync(Guid categoryId)
+        {
+            var category = await _context.Categories
+                .AsNoTracking()
+                .Where(c => c.Id == categoryId)
+                .Select(c => new { c.BranchId })
+                .FirstOrDefaultAsync();
+
+            if (category == null)
+                throw new InvalidOperationException("Category not found.");
+
+            return category.BranchId.Value;
+        }
 
 
 

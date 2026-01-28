@@ -26,7 +26,7 @@ namespace Application.Interfaces
             decimal quantity,
             decimal minStockLevel);
 
-        Task<Guid> DeleteProdAsync(Guid id);
+        Task<bool> DeleteProdAsync(Guid id);
         Task<Product?> GetByIdProdAsync(Guid id);
 
         Task<List<Product>> GetProductsAsync();

@@ -72,5 +72,72 @@ namespace Application.Interfaces
             Guid ? branchId,
             DateTime? fromDate,
             DateTime? toDate);
+
+
+        // =========================
+        // UI 1: DEPOSIT (ADD MONEY)
+        // =========================
+
+        /// <summary>
+        /// Select customer + amount + remark
+        /// Increases wallet balance
+        /// </summary>
+        Task DepositAsync(
+            Guid customerId,
+            decimal amount,
+            string remark);
+
+        // =========================
+        // UI 2: WALLET TRANSACTION
+        // =========================
+
+        /// <summary>
+        /// Select wallet + amount + transaction type + remark
+        /// Purchase / OwnerUse  => reduce
+        /// Refund / OwnerReturn => increase
+        /// </summary>
+        Task WalletTransactionAsync(
+            Guid customerId,
+            decimal amount,
+            string transactionType,
+            string remark);
+
+
+        /// <summary>
+        /// Wallet list (Customer + Balance only)
+        /// Filter by phone and date
+        /// </summary>
+        Task<List<CustomerWalletSimpleResponse>> GetAllWalletCustomersAsync(
+            string? phone,
+            DateTime? fromDate,
+            DateTime? toDate);
+
+        // =========================
+        // PAPER VIEW (HEADER + DETAILS)
+        // =========================
+
+        /// <summary>
+        /// Paper-style customer wallet view
+        /// Header (name, phone, balance)
+        /// + Detail transactions
+        /// </summary>
+        Task<CustomerTransactionPaperResponse> GetCustomerTransactionPaperAsync(
+            Guid customerId,
+            DateTime? fromDate,
+            DateTime? toDate);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }

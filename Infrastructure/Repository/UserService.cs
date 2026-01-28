@@ -45,6 +45,7 @@ namespace Infrastructure.Repository
                 PhoneNumber = request.Phone,
                 FirstName = request.FullName,
                 Gender = request.Gender,
+                BranchId = request.BranchId,
 
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = _currentUser.UserId, // or UserId
